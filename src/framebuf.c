@@ -1,5 +1,8 @@
 #include "framebuf.h"
 
+#include <string.h>
+#include <tgmath.h>
+
 void fb_init(struct framebuf *self, struct fb_var_screeninfo *info,
              uint16_t *fb) {
     self->fb = fb;
@@ -43,12 +46,12 @@ void fb_set_pixel(struct framebuf *self, size_t x, size_t y,
 
 void fb_set_pixel_rgb(struct framebuf *self, size_t x, size_t y, uint32_t r,
                       uint32_t g, uint32_t b) {
-    set_pixel(self, x, y, r << 24 | g << 16 | b << 8 | 0xFF);
+    fb_set_pixel(self, x, y, r << 24 | g << 16 | b << 8 | 0xFF);
 }
 
 void fb_set_pixel_rgba(struct framebuf *self, size_t x, size_t y,
                        uint32_t r, uint32_t g, uint32_t b, uint32_t a) {
-    set_pixel(self, x, y, r << 24 | g << 16 | b << 8 | a);
+    fb_set_pixel(self, x, y, r << 24 | g << 16 | b << 8 | a);
 }
 
 void fb_save_bitmap(struct framebuf *self, uint16_t *dest) {
@@ -58,4 +61,3 @@ void fb_save_bitmap(struct framebuf *self, uint16_t *dest) {
 void fb_load_bitmap(struct framebuf *self, uint16_t *src) {
     memcpy(self->fb, src, self->len);
 }
-

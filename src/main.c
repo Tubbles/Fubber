@@ -2,11 +2,10 @@
 
 #include <assert.h>
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
-#include <tgmath.h>
 
 #include <fcntl.h>
 #include <signal.h>
@@ -51,19 +50,21 @@ int main(int argc, char **argv) {
     size_t len = info.bits_per_pixel / 8 * info.xres * info.yres;
     uint16_t *fb =
         mmap(NULL, len, PROT_READ | PROT_WRITE, MAP_SHARED, fbfd, 0);
-    init_framebuf(&fbuf, &info, fb);
+    fb_init(&fbuf, &info, fb);
     uint16_t *start_screen = malloc(sizeof(*fb) * len);
-    print_screen(&fbuf, start_screen);
+    fb_save_bitmap(&fbuf, start_screen);
 
     while (running) {
         for (uint64_t x = 0; x < info.xres; ++x) {
             for (uint64_t y = 0; y < info.yres; ++y) {
-                set_pixel_rgb(&fbuf, x, y, 0xFF, 0xAA, 0x33);
+                fb_set_pixel_rgb(&fbuf, x, y, 0xFF, 0xAA, 0x33);
             }
         }
     }
 
-    load_bitmap(&fbuf, start_screen); // Reset the old frame buffer state
+    fb_load_bitmap(&fbuf, start_screen); // Reset the old frame buffer state
+    free(start_screen);
+    start_screen = NULL;
     close(fbfd);
     assert(0 == tcsetattr(0, TCSADRAIN, &term_info_save));
     printf("\033[?25h"); // show cursor
