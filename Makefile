@@ -1,5 +1,6 @@
 flags = -g --std=c18 -O2 -lm
 
+incs = src/*.h
 srcs = src/*.c
 
 .PHONY=all
@@ -12,7 +13,7 @@ pedantic:
 
 .PHONY=format
 format:
-	for f in $(srcs) ; do clang-format-9 -i --style=file $$f ; done
+	for f in $(incs) $(srcs) ; do clang-format-9 -i --style=file $$f ; done
 
 .PHONY=run
 run: all
