@@ -1,4 +1,4 @@
-flags = -g --std=c18 -lm
+flags = -g --std=c18 -O2 -lm
 
 srcs = src/*.c
 
