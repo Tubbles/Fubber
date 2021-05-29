@@ -1,16 +1,18 @@
 flags = -g --std=c18 -lm
 
+srcs = src/*.c
+
 .PHONY=all
 all:
-	gcc $(flags) main.c -o fubber
+	gcc $(flags) $(srcs) -o fubber
 
 .PHONY=all
 pedantic:
-	gcc $(flags) -Wall -Wextra -pedantic -Werror main.c -o fubber
+	gcc $(flags) -Wall -Wextra -pedantic -Werror $(srcs) -o fubber
 
 .PHONY=format
 format:
-	clang-format-9 -i --style=file main.c
+	for f in $(srcs) ; do clang-format-9 -i --style=file $$f ; done
 
 .PHONY=run
 run: all
