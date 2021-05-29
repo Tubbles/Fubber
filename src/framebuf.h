@@ -1,14 +1,25 @@
 #pragma once
 
-#include <stdint.h>
 #include <stddef.h>
+#include <stdint.h>
 
 #include <linux/fb.h>
+
+struct color {
+    uint8_t r;
+    uint8_t g;
+    uint8_t b;
+    uint8_t a;
+};
+
+struct color cl_from(uint32_t rgba);
+struct color cl_from_rgb(uint8_t r, uint8_t g, uint8_t b);
+struct color cl_from_rgba(uint8_t r, uint8_t g, uint8_t b, uint8_t a);
 
 struct framebuf {
     uint16_t *fb;
     struct fb_var_screeninfo screen_info;
-    size_t len;
+    size_t len; // in bytes
     size_t screen_width;
     uint32_t r_mask;
     uint32_t g_mask;
@@ -27,13 +38,12 @@ struct framebuf {
 void fb_init(struct framebuf *self, struct fb_var_screeninfo *info,
              uint16_t *fb);
 
-void fb_set_pixel(struct framebuf *self, size_t x, size_t y, uint32_t rgba);
+uint16_t fb_pack_color(struct framebuf *self, struct color color);
 
-void fb_set_pixel_rgb(struct framebuf *self, size_t x, size_t y, uint32_t r,
-                      uint32_t g, uint32_t b);
+void fb_clear(struct framebuf *self, struct color color);
 
-void fb_set_pixel_rgba(struct framebuf *self, size_t x, size_t y,
-                       uint32_t r, uint32_t g, uint32_t b, uint32_t a);
+void fb_set_pixel(struct framebuf *self, size_t x, size_t y,
+                  struct color color);
 
 void fb_save_bitmap(struct framebuf *self, uint16_t *dest);
 

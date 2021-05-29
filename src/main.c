@@ -55,11 +55,7 @@ int main(int argc, char **argv) {
     fb_save_bitmap(&fbuf, start_screen);
 
     while (running) {
-        for (uint64_t x = 0; x < info.xres; ++x) {
-            for (uint64_t y = 0; y < info.yres; ++y) {
-                fb_set_pixel_rgb(&fbuf, x, y, 0xFF, 0xAA, 0x33);
-            }
-        }
+        fb_clear(&fbuf, cl_from_rgb(0xFF, 0xAA, 0x33));
     }
 
     fb_load_bitmap(&fbuf, start_screen); // Reset the old frame buffer state

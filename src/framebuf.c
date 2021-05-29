@@ -1,10 +1,41 @@
 #include "framebuf.h"
 
+#include <assert.h>
 #include <string.h>
 #include <tgmath.h>
 
+#include <stdio.h>
+
+struct color cl_from(uint32_t rgba) {
+    struct color ret;
+    ret.r = rgba >> 24 & 0xFF;
+    ret.g = rgba >> 16 & 0xFF;
+    ret.b = rgba >> 8 & 0xFF;
+    ret.a = rgba & 0xFF;
+    return ret;
+}
+
+struct color cl_from_rgb(uint8_t r, uint8_t g, uint8_t b) {
+    struct color ret;
+    ret.r = r;
+    ret.g = g;
+    ret.b = b;
+    ret.a = 0xFF;
+    return ret;
+}
+
+struct color cl_from_rgba(uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
+    struct color ret;
+    ret.r = r;
+    ret.g = g;
+    ret.b = b;
+    ret.a = a;
+    return ret;
+}
+
 void fb_init(struct framebuf *self, struct fb_var_screeninfo *info,
              uint16_t *fb) {
+    assert(self && info && fb);
     self->fb = fb;
     self->screen_info = *info;
     self->len = info->bits_per_pixel / 8 * info->xres * info->yres;
@@ -23,41 +54,41 @@ void fb_init(struct framebuf *self, struct fb_var_screeninfo *info,
     self->a_shift_down = 8 - info->transp.length;
 }
 
-void fb_set_pixel(struct framebuf *self, size_t x, size_t y,
-                  uint32_t rgba) {
-    uint8_t r = rgba >> 24 & 0xFF;
-    uint8_t g = rgba >> 16 & 0xFF;
-    uint8_t b = rgba >> 8 & 0xFF;
-    uint8_t a = rgba >> 0 & 0xFF;
-    // printf("b: 0x%X\n", b);
+uint16_t fb_pack_color(struct framebuf *self, struct color color) {
+    assert(self);
+    uint8_t r = color.r;
+    uint8_t g = color.g;
+    uint8_t b = color.b;
+    uint8_t a = color.a;
 
     uint16_t set = ((r >> self->r_shift_down) & self->r_mask)
                    << self->r_shift;
     set |= ((g >> self->g_shift_down) & self->g_mask) << self->g_shift;
     set |= ((b >> self->b_shift_down) & self->b_mask) << self->b_shift;
     set |= ((a >> self->a_shift_down) & self->a_mask) << self->a_shift;
-
-    // printf("b_shift_down: %i\n", b_shift_down);
-    // printf("b_mask: 0x%X\n", b_mask);
-    // printf("b_shift: %i\n", b_shift);
-    // printf("setting to 0x%X\n", set);
-    self->fb[y * self->screen_width + x] = set;
+    return set;
 }
 
-void fb_set_pixel_rgb(struct framebuf *self, size_t x, size_t y, uint32_t r,
-                      uint32_t g, uint32_t b) {
-    fb_set_pixel(self, x, y, r << 24 | g << 16 | b << 8 | 0xFF);
+void fb_clear(struct framebuf *self, struct color color) {
+    assert(self);
+    uint16_t packed_color = fb_pack_color(self, color);
+    for (size_t i = 0; i < self->len / 2; ++i) {
+        self->fb[i] = packed_color;
+    }
 }
 
-void fb_set_pixel_rgba(struct framebuf *self, size_t x, size_t y,
-                       uint32_t r, uint32_t g, uint32_t b, uint32_t a) {
-    fb_set_pixel(self, x, y, r << 24 | g << 16 | b << 8 | a);
+void fb_set_pixel(struct framebuf *self, size_t x, size_t y,
+                  struct color color) {
+    assert(self);
+    self->fb[y * self->screen_width + x] = fb_pack_color(self, color);
 }
 
 void fb_save_bitmap(struct framebuf *self, uint16_t *dest) {
+    assert(self && dest);
     memcpy(dest, self->fb, self->len);
 }
 
 void fb_load_bitmap(struct framebuf *self, uint16_t *src) {
+    assert(self && src);
     memcpy(self->fb, src, self->len);
 }
