@@ -5,6 +5,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <tgmath.h>
 
 #include <fcntl.h>
@@ -20,6 +21,7 @@ static volatile bool running = true;
 struct framebuf {
     uint16_t *fb;
     struct fb_var_screeninfo screen_info;
+    size_t len;
     size_t screen_width;
     uint32_t r_mask;
     uint32_t g_mask;
@@ -46,6 +48,7 @@ void init_framebuf(struct framebuf *self, struct fb_var_screeninfo *info,
                    uint16_t *fb) {
     self->fb = fb;
     self->screen_info = *info;
+    self->len = info->bits_per_pixel / 8 * info->xres * info->yres;
     self->screen_width = info->xres;
     self->r_mask = pow(2, info->red.length) - 1;
     self->g_mask = pow(2, info->green.length) - 1;
@@ -90,6 +93,14 @@ void set_pixel_rgba(struct framebuf *fb, size_t x, size_t y, uint32_t r,
     set_pixel(fb, x, y, r << 24 | g << 16 | b << 8 | a);
 }
 
+void print_screen(struct framebuf *self, uint16_t *dest) {
+    memcpy(dest, self->fb, self->len);
+}
+
+void load_bitmap(struct framebuf *self, uint16_t *src) {
+    memcpy(self->fb, src, self->len);
+}
+
 int main(int argc, char **argv) {
     (void)argc;
     (void)argv;
@@ -107,32 +118,31 @@ int main(int argc, char **argv) {
     assert(0 == tcsetattr(0, TCSADRAIN, &term_info));
 
     // Open the frame buffer
-    struct fb_var_screeninfo screen_info;
+    struct fb_var_screeninfo info;
     int fbfd = open("/dev/fb0", O_RDWR);
     assert(fbfd > 0);
-    assert(0 == ioctl(fbfd, FBIOGET_VSCREENINFO, &screen_info));
-    size_t len = screen_info.bits_per_pixel / 8 * screen_info.xres *
-                 screen_info.yres;
+    assert(0 == ioctl(fbfd, FBIOGET_VSCREENINFO, &info));
 
+    size_t len = info.bits_per_pixel / 8 * info.xres * info.yres;
     uint16_t *fb =
         mmap(NULL, len, PROT_READ | PROT_WRITE, MAP_SHARED, fbfd, 0);
-    init_framebuf(&fbuf, &screen_info, fb);
+    init_framebuf(&fbuf, &info, fb);
+    uint16_t *start_screen = malloc(sizeof(*fb) * len);
+    print_screen(&fbuf, start_screen);
 
     while (running) {
-        for (uint64_t x = 0; x < screen_info.xres; ++x) {
-            for (uint64_t y = 0; y < screen_info.yres; ++y) {
+        for (uint64_t x = 0; x < info.xres; ++x) {
+            for (uint64_t y = 0; y < info.yres; ++y) {
                 set_pixel_rgb(&fbuf, x, y, 0xFF, 0xAA, 0x33);
             }
         }
     }
 
+    load_bitmap(&fbuf, start_screen); // Reset the old frame buffer state
     close(fbfd);
     assert(0 == tcsetattr(0, TCSADRAIN, &term_info_save));
     printf("\033[?25h"); // show cursor
     fflush(stdout);
-    // printf("\014"); // clear screen
-    // fflush(stdout);
-    system("clear");
 
     return 0;
 }
