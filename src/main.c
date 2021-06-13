@@ -48,10 +48,10 @@ int main(int argc, char **argv) {
     assert(0 == ioctl(fbfd, FBIOGET_VSCREENINFO, &info));
 
     size_t len = info.bits_per_pixel / 8 * info.xres * info.yres;
-    uint16_t *fb =
+    uint32_t *fb =
         mmap(NULL, len, PROT_READ | PROT_WRITE, MAP_SHARED, fbfd, 0);
     fb_init(&fbuf, &info, fb);
-    uint16_t *start_screen = malloc(sizeof(*fb) * len);
+    uint32_t *start_screen = malloc(sizeof(*fb) * len);
     fb_save_bitmap(&fbuf, start_screen);
 
     while (running) {
