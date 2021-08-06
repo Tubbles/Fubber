@@ -1,7 +1,13 @@
 flags = -g --std=c18 -lm
 
+modules = $(wildcard modules/*)
 incs = src/*.h
 srcs = src/*.c
+
+flags += $(patsubst %,-I%,$(modules))
+# srcs += $(patsubst %,%/*.c,$(modules))
+srcs += modules/str/str.c
+
 
 .PHONY=all
 all:

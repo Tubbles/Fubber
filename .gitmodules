@@ -1,0 +1,3 @@
+[submodule "modules/str"]
+	path = modules/str
+	url = git@github.com:maxim2266/str.git
